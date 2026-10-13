@@ -1,1 +1,5 @@
 learning.iml
+out
+.idea
+.obsidian
+*.iml
