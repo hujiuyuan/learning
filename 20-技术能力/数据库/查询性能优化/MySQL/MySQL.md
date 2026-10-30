@@ -57,6 +57,7 @@ MySQL 基础知识框架（架构、索引、事务、锁、日志、引擎、�
 ## 相关技能
 
 [[MyBatis-Plus]]、Java 时间与 JSON 序列化、Spring 事务与异常、Redis/Valkey、XXL-Job
+- 理论：[[存储引擎理论]]
 
 ## 用在哪些工程能力
 

@@ -87,6 +87,7 @@ type: 技能点
 
 - [[Nacos]]、[[Redis]]、[[Spring Boot]]、[[Spring MVC]]
 - [[多租户与数据隔离]]、[[认证与授权]]
+- 理论：[[服务发现与配置理论]]（路由/门控配置的传播延迟与兜底）
 - 网关层没有限流/熔断；服务侧限流熔断见 [[Sentinel]]，Boot 4 / Cloud / Alibaba 版本组合见 [[Spring Boot#Boot 4 版本组合（muou）]]
 
 ## 用在哪些工程能力

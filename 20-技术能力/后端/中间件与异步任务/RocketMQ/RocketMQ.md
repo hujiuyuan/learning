@@ -143,6 +143,7 @@ type: 技能点
 - [[可观测性与OpenTelemetry]]（trace_id 进消息头，消费侧续链路）
 - [[CI-CD与部署]]（compose、外置卷、端口绑定）
 - [[Nacos]]（`transport`/`dispatcher-enabled` 配置源）
+- 理论：[[消息系统理论]]、[[分布式系统理论]]、[[序列化与Schema演进理论]]
 
 ## 用在哪些工程能力
 

@@ -150,6 +150,7 @@ type: 技能点
 - [[CI-CD与部署]]（collector/后端编排、内存上限）
 - [[Sentinel]]（限流/熔断指标）
 - [[Spring Boot]]（自动装配、Actuator）
+- 理论：[[可观测性理论]]
 
 ## 用在哪些工程能力
 

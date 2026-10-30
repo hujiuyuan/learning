@@ -67,5 +67,6 @@ type: 通用技能
 ## 相关
 
 - 技能点：[[Tauri与Rust IPC]]、[[LanceDB与RAG]]、[[keyring与Provider]]
+- 理论：[[检索与排序理论]]、[[复制与一致性理论]]
 - 场景：[[本地优先]]
 - 实践：[[NovelForge]]

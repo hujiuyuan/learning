@@ -102,6 +102,7 @@ type: 技能点
 ## 相关技能
 
 [[Tauri与Rust IPC]]、[[keyring与Provider]]
+- 理论：[[检索与排序理论]]
 
 ## 用在哪些工程能力
 

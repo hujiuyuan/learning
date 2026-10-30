@@ -83,6 +83,7 @@ type: 技能点
 
 - [[Spring Cloud Gateway]]、[[Spring Boot]]、[[CI-CD与部署]]
 - [[Redis]]（网关会话/缓存也依赖 Redis）
+- 理论：[[服务发现与配置理论]]（注册/心跳、推拉、AP/CP、配置灰度与兜底）
 
 ## 用在哪些工程能力
 

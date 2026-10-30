@@ -136,6 +136,7 @@ type: 技能点
 - [[Spring Cloud Gateway]]（网关与服务侧限流的分工）
 - [[可观测性与OpenTelemetry]]（限流/熔断指标与控制台）
 - [[Spring Boot]]（自动装配、Servlet 条件）
+- 理论：[[排队与限流理论]]
 
 ## 用在哪些工程能力
 
