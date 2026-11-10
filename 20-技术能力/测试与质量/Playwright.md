@@ -20,6 +20,9 @@ type: 技能点
 5. **失败留证据**：失败截图、接口报错截图、`trace: retain-on-failure`；截图里的报错提示画红框。
 6. **报告与对比**：自研 reporter 汇总为单文件 HTML + `summary.json`，和上一次比新增失败/已修复/仍失败。
 7. **反向验证**：`expectApiError` 声明「这里应该报错」，命中不算问题，没报出来算问题。
+8. **按业务域组织**：e2e 目录按业务域编号 00–22，编号沿用主线业务域、不是执行顺序；用例标题带 `@smoke/@lifecycle/@feature/@resilience`，用 `--grep` 筛。
+9. **一趟一租户、串行**：两条主线共用同一家新开的总会，01 开通租户并激活管理员，03 起依赖它；租户编码到秒，多车道用 `E2E_TENANT_LANE` 后缀避免撞码。
+10. **库断言明确**：`E2E_DB_MODE=local/none`；dev 下验库用例明确失败，不跳过装绿。
 
 ## 我用它干过什么
 
@@ -29,6 +32,7 @@ type: 技能点
 | setup 先登录存 storageState | 实战 | muou | 2026-10 | [[E2E报告]] |
 | 统一采集接口/console/i18n/截图 | 实战 | e2e-hub | 2026-10 | [[E2E报告]] |
 | 自研 reporter 出单文件报告 | 实战 | e2e-hub | 2026-10 | [[E2E报告]] |
+| e2e 按业务域重排 + 多车道租户隔离 + zh-HK 断言 | 实战 | muou | 2026-11 | 本页 |
 
 ## 选型与取舍
 
@@ -47,8 +51,9 @@ type: 技能点
 ### 为什么 `workers: 1`、共用服务
 
 - muou 的 E2E 要连本机八个服务 + 网关 + 两个 dev server，共用一套测试库；并行 worker 会互相改数据，失败难定位。串行换稳定。
-- 代价：跑得慢；用例多了会成为瓶颈。项目当前 21 个 flow/69 条用例，串行可接受。
-- 如果以后按租户/数据隔离出独立库，可以并行；当前没有做数据隔离，串行是明确取舍。
+- 代价：跑得慢；用例多了会成为瓶颈。按业务域重排后覆盖 00–22，串行时间已经是约束。
+- 多车道是环境级隔离：租户编码到秒，`E2E_TENANT_LANE` 再加两位后缀，避免并行车道在同一秒开租户撞编码/前缀；它不改变 Playwright 的 `workers: 1`。
+- 如果以后按租户/数据隔离出独立库，可以再加 worker；当前没有做数据隔离，串行是明确取舍。
 
 ### 为什么失败重跑一次、flaky 单列
 
@@ -72,6 +77,9 @@ type: 技能点
 - **反向验证**：`e2e-hub/reporter/fixture.ts:14-16` 把 `expectApiError` 写成 annotation；`e2e-hub/reporter/fixture.ts:197-198` 检查声明了却没报错的用例。
 - **flaky 判定**：`e2e-hub/reporter/hub-reporter.ts:254` 把 Playwright 的 `flaky` outcome 单列；`e2e-hub/reporter/render.ts:176` 显示「第 N 次才过」；`e2e-hub/reporter/hub-reporter.ts:238-245` 的 summary 把 flaky 计入通过但报告里单独标注。
 - **muou 仓内还有一套 spec**：`muou-web/e2e` 10 个 + `muou-admin/e2e` 7 个 = 17 个提交过的 e2e spec，另有 20 个 `e2e-dev` 开发态 spec；这些和 e2e-hub 的 21 条 flow 是两套，不要混成一个数字。两套都没有接 CI，仍是手动跑。
+- **业务域目录与标签**：`muou-web/e2e/README.md:1-60` 定义 `00-support` 到 `22-resilience` 与四类标签；`muou-admin/e2e/README.md:1-20` 共用编号、只建有用例的域。
+- **租户车道**：`muou-web/e2e/00-support/tenant-fixture.ts:30-45` 编码到秒，`E2E_TENANT_LANE` 加两位车道后缀；前缀也带后缀，避免并行车道同秒开租户撞唯一键。
+- **繁體与库断言**：后台登录、订阅等链路按 zh-HK 繁體文案断言（`muou-web` `1c032c2d`、`63b7027a`）；`E2E_DB_MODE=local` 直连本机 PG，dev 默认 `none`，验库用例明确失败。
 
 ## 边界
 
@@ -80,11 +88,12 @@ type: 技能点
 - **报告不内嵌 trace**：只给 `show-trace` 命令（`e2e-hub/README.md:15`）。
 - **没接 CI**：仓里没有 `.github/`、`.gitlab-ci.yml`、`Jenkinsfile`，仍是手动 `node bin/run.mjs`（`e2e-hub/README.md:9-12`）。
 - **没写过**：组件测试（Playwright CT）、视觉回归、API-only 测试、多浏览器矩阵、并行 worker。
+- **多车道不等于并行 worker**：`E2E_TENANT_LANE` 只隔离租户编码，Playwright 仍 `workers: 1`；没有做过 worker 级并行。
 - **慢接口只报警**：`e2e-hub/reporter/render.ts:231` 明确「只报警、不判用例失败」，慢不等于功能坏。
 
 ## 相关技能
 
-[[JUnit与Testcontainers]]、[[E2E报告]]
+[[JUnit与Testcontainers]]、[[E2E报告]]、[[muou 2026-11 落地记录]]
 
 ## 用在哪些工程能力
 

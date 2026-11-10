@@ -21,6 +21,8 @@ type: 技能点
 4. **新路径显式拒绝降级**：`requireDistributed = true`，没接上 Seata 时直接抛错，不悄悄退成本地事务。
 5. **模式必须和数据源代理一致**：注解写 XA，`seata.data-source-proxy-mode` 也必须是 XA；不一致在进入事务前就抛。
 6. **客户端和服务端版本一致**：`muou-build` 钉 2.6.0，TC 镜像也用 2.6.0。
+7. **事务日志存 DB**：TC 的 store 用 PostgreSQL db 模式，本机与测试环境统一；`SEATA_STORE_MODE` 可临时退回 file。db 模式要先建 `seata` 库与表，事务状态可查、重启不丢。
+8. **测试 TC 必须显式隔离**：测试启动前校验 host/端口/registry/config/grouplist，拒绝原 TC、运行 TC 与数据库端口；不满足直接启动失败，不能悄悄连到共享 TC。
 
 ## 我用它干过什么
 
@@ -31,6 +33,7 @@ type: 技能点
 | `@MuouGlobalTx` 注解 + 自动装配 + 本地降级 | 实战 | muou | 2026-09 | — |
 | Seata TC 2.6.0 本地编排 | 实战 | muou | 2026-09 | — |
 | AT/TCC 模式与测试骨架 | 设计/测试 | muou | 2026-09 | — |
+| 事务日志 PostgreSQL db 模式 + 测试 TC 显式隔离 | 实战 | muou | 2026-11 | 本页 |
 
 ## 选型与取舍
 
@@ -83,6 +86,8 @@ type: 技能点
 - **拒绝静默降级**：`requireDistributed = true` 时，没有接上 Seata 直接抛 `TX_GLOBAL_MODE_PROXY_DISABLED`（同文件 `:37-40`）。
 - **模式校验**：`SeataGlobalTxExecutor` 进入事务前比对注解 mode 和 `seata.data-source-proxy-mode`，不一致抛 `TX_GLOBAL_MODE_MISMATCH`；TCC 不走数据源代理（`muou-backend/muou-common/muou-common-app/src/main/java/com/voidtech/muou/common/tx/seata/SeataGlobalTxExecutor.java:70-120`）。
 - **TC 与 undo_log**：`muou-backend/muou-app-ops/middleware/seata/docker-compose.yml:23-32` 用 `apache/seata-server:2.6.0.jdk21`；core/billing/message 初始化脚本都建 `undo_log`（`muou-backend/muou-app-ops/databases/migration/core/V202609112100__core_init.sql:8995`、`muou-backend/muou-app-ops/databases/migration/billing/V202609112100__billing_init.sql:1374`、`muou-backend/muou-app-ops/databases/migration/message/V202609112100__message_init.sql:1266`）。
+- **事务日志 db 模式**：`middleware/seata/resources/application.yml:57-76` 默认 `store.mode=db`，`db-type=postgresql`，库 `seata`；建库建表脚本 `middleware/seata/scripts/postgresql.sql`；`.env` 用 `SEATA_STORE_MODE` 可退回 file（`muou-app-ops` `f0893dc`）。
+- **测试 TC 隔离**：`TestTcTarget.java:40-79` 校验 host 必须是数字回环、端口必须显式、禁用 8091/18091/28091/5432/5434；`verifyIfEnabled` 要求 registry/config 必须 file、`grouplist` 只允许一个显式选定的 default TC，否则启动失败；`TestTcTargetSafetyTest`、`SeataTestDatabaseSafetyTest` 锁住这些规则（`muou-common` `31de788`）。
 
 ## 边界
 
@@ -92,10 +97,13 @@ type: 技能点
 - 没有做过 Seata 控制台运维、事务补偿、超时/回滚告警。
 - 没有用 Saga 模式；TCC 的 Cancel/Confirm 只在测试里。
 - 没有验证过跨库 XA 在最大并发下的性能代价。
+- 生产 TC 的 store 模式没有在这轮确认；db 模式需要单独的 `seata` 库与建表脚本，file 模式可临时退回。
+- 测试 TC 隔离只覆盖本机 `muou-common` 的集成测试；没有覆盖所有服务的测试配置。
 
 ## 相关技能
 
 - [[事务与状态一致性]]、[[Spring事务]]、[[Outbox]]、[[Outbox落地]]、[[任务幂等]]
+- 落地记录：[[muou 2026-11 落地记录]]
 - [[PostgreSQL]]、[[Nacos]]
 - 理论：[[分布式系统理论]]、[[事务与隔离理论]]
 

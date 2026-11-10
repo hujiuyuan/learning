@@ -2,13 +2,13 @@
 type: 实践
 技能点: Outbox
 项目: [muou-client]
-时间: 2026-10
+时间: 2026-10~11
 证据: 实战
 ---
 
 # Outbox落地
 
-技能点：[[Outbox]] · 项目：muou-client · 2026-10
+技能点：[[Outbox]] · 项目：muou-client · 2026-10~11
 
 场景：[[任务幂等]]
 
@@ -58,3 +58,14 @@ type: 实践
 - `muou-backend/muou-common/muou-common-app/src/test/java/com/voidtech/muou/common/tx/outbox/TxOutboxCrashRecoveryTest.java`
 - `muou-backend/muou-common/muou-common-app/src/test/java/com/voidtech/muou/common/tx/outbox/TxOutboxTransactionTest.java`
 - 时间说明：muou-client 的 git 分支没有提交记录，`2026-10` 按迁移文件日期 `V202610091735` 与文件修改时间推断，不是提交记录。
+
+## 2026-11 人员更正驳回通知链
+
+在 Outbox 之上补了一层「通知意图」，让驳回通知可回源核对、可补偿，而不是发出去就算完。
+
+- **意图表**：`member_person_correction_notice` 状态 `prepared/ready/retry/done/cancelled/failed`，另有投递尝试子表；审核命令与意图同事务落库（`muou-server-member` `b17958ab`；迁移 `V202611042210__person_correction_notice_intent.sql`）。
+- **只发实际移动的行**：守卫更新返回 0 行不发布 outbox；`done/cancelled/failed` 终态不可复活，旧失败线程的迟到更新也被挡下（`e3bd204c`、`60406388`；`PersonCorrectionNoticeService.java:70-110`）。
+- **通知域可靠受理**：notify 侧持久受理并复用正式重试链，`done` 才算通知域受理；同码多模板按最早创建的一条确定性发送并告警（`muou-server-notify` `4210c86`、`bec695f`；`PersonCorrectionNoticeStore.java:57-67`）。
+- **补偿**：ops 登记 `member-person-correction-notice-retry`，每分钟按租户扫、最多 200 条（`muou-app-ops` `da35969`；`R__muou_jobs.sql`）。
+
+边界：只覆盖人员更正驳回这一种通知；同码多模板的唯一性在业务层，库上没有约束；补偿任务是分钟级批量，时延未压测。
