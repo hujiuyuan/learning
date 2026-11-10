@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>手搓字符语言模型 · 目标地图</title>
+<style>
+  :root {
+    --bg: #f6f7f9;
+    --card: #ffffff;
+    --ink: #1c2430;
+    --muted: #5b6675;
+    --line: #d8dee7;
+    --accent: #2f6fed;
+    --accent-soft: #e8f0ff;
+    --warn: #b45309;
+    --warn-soft: #fff7e6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #12161d;
+      --card: #1a2029;
+      --ink: #e7ecf3;
+      --muted: #9aa6b6;
+      --line: #2b3442;
+      --accent: #6ea0ff;
+      --accent-soft: #1b2a47;
+      --warn: #f0b35e;
+      --warn-soft: #2e2416;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 20px 56px;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    line-height: 1.6;
+  }
+  main { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 26px; margin: 0 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 24px; font-size: 14px; }
+  .badge {
+    display: inline-block; padding: 2px 10px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent);
+    font-size: 12px; font-weight: 600; margin-left: 8px;
+  }
+  .layer {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 14px; padding: 18px 20px; margin-bottom: 14px;
+  }
+  .layer h2 {
+    font-size: 13px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--muted); margin: 0 0 10px;
+  }
+  .goal { font-size: 20px; font-weight: 700; margin: 0; }
+  .goal small { display: block; font-size: 13px; font-weight: 400; color: var(--muted); margin-top: 6px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .chip {
+    padding: 8px 12px; border: 1px solid var(--line); border-radius: 10px;
+    font-size: 13px; background: var(--bg); color: var(--ink);
+  }
+  .chip.current {
+    border-color: var(--accent); background: var(--accent-soft);
+    color: var(--accent); font-weight: 700;
+  }
+  .arrow { color: var(--muted); align-self: center; font-size: 14px; }
+  .flow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+  .box {
+    padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line);
+    background: var(--bg); font-size: 13px; min-width: 110px; text-align: center;
+  }
+  .box strong { display: block; font-size: 12px; color: var(--muted); font-weight: 500; }
+  .box.hot { border-color: var(--accent); background: var(--accent-soft); }
+  .grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 14px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+  .why {
+    background: var(--warn-soft); border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+    border-radius: 14px; padding: 18px 20px;
+  }
+  .why h2 { color: var(--warn); }
+  .why ul { margin: 8px 0 0; padding-left: 18px; }
+  .why li { margin: 6px 0; font-size: 13px; }
+  .note { color: var(--muted); font-size: 12px; margin-top: 10px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <h1>手搓字符语言模型 <span class="badge">你现在在这里</span></h1>
+  <p class="sub">项目线 · 第 1 节「文本、词表与 one-hot」 · 目标拆解</p>
+
+  <section class="layer">
+    <h2>0 · 终极目标</h2>
+    <p class="goal">纯 numpy 手写一个字符级语言模型
+      <small>能训练、能采样；训练后输出有可辨认的英文词形、空格和标点；能说清每个梯度从哪来。</small>
+    </p>
+  </section>
+
+  <section class="layer">
+    <h2>1 · 项目线怎么走到终点</h2>
+    <div class="chips">
+      <div class="chip current">1 数据管道 ← 现在</div>
+      <div class="chip">2 bigram 前向</div>
+      <div class="chip">3 交叉熵与 dW</div>
+      <div class="chip">4 训练与采样</div>
+      <div class="chip">5 隐藏层与反向传播</div>
+      <div class="chip">6 context window</div>
+    </div>
+  </section>
+
+  <section class="layer">
+    <h2>2 · 当前阶段：第 1 步「数据管道」</h2>
+    <p style="margin:0 0 12px">模型不能直接吃字符串。先把文本变成数字矩阵，后面所有层才有输入。</p>
+    <div class="flow">
+      <div class="box"><strong>原始文本</strong><code>"hello world"</code></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>字符表</strong><code>[' ','d','e','h','l','o','r','w']</code></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>编号</strong><code>[3,2,4,4,5,...]</code></div>
+      <div class="arrow">→</div>
+      <div class="box hot"><strong>one-hot 矩阵</strong><code>(10, 8)</code></div>
+      <div class="arrow">→</div>
+      <div class="box"><strong>喂给模型</strong><code>X @ W</code></div>
+    </div>
+  </section>
+
+  <section class="layer">
+    <h2>3 · 这一小步学完，立刻能做什么</h2>
+    <table>
+      <tr><th>能做到</th><th>意义</th></tr>
+      <tr><td>把任意一段文本变成 <code>(n, V)</code> 的数值矩阵</td><td>模型的第一层输入就有了</td></tr>
+      <tr><td>说清 <code>n</code> 和 <code>V</code> 各是什么</td><td>后面推所有形状都靠这两个数</td></tr>
+      <tr><td>用 <code>X @ W</code> 得到每个字符的得分</td><td>下一步 bigram 前向直接接上</td></tr>
+    </table>
+  </section>
+
+  <div class="grid">
+    <section class="why">
+      <h2>为什么不用 ASCII？</h2>
+      <ul>
+        <li><strong>数字大小会被误读</strong>：ASCII 里 <code>'w'=119</code>、<code>'h'=104</code>，模型会以为 <code>w</code> 比 <code>h</code>「大」；字符之间没有这种大小关系。</li>
+        <li><strong>one-hot 把字符当类别</strong>：每个字符一个独立方向，彼此距离相同。</li>
+        <li><strong>词表只收语料里出现的字符</strong>：<code>V</code> 可控，不会为没出现的字符留位置。</li>
+        <li><strong>代价</strong>：<code>V</code> 大时矩阵很稀疏、占内存；所以真实大模型用 embedding 代替 one-hot。这里 <code>V</code> 很小，先用手写 one-hot 把原理跑通。</li>
+      </ul>
+    </section>
+
+    <section class="layer">
+      <h2>判断自己学会了没有</h2>
+      <ul style="margin:0; padding-left:18px; font-size:13px">
+        <li>能说出 <code>n</code> 是样本数、<code>V</code> 是词表大小</li>
+        <li>能解释 <code>X</code> 为什么是 <code>(n, V)</code></li>
+        <li>能说清 one-hot 里那个 <code>1</code> 放在哪一列</li>
+        <li>能说出不用 ASCII 的一个具体代价</li>
+      </ul>
+      <p class="note">教案：<code>教案/项目线-第01节-文本词表one-hot.md</code></p>
+    </section>
+  </div>
+</main>
+</body>
+</html>
